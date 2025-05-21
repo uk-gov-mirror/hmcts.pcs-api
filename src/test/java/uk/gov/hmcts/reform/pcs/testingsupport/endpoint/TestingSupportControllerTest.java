@@ -10,6 +10,7 @@ import uk.gov.hmcts.reform.pcs.notify.model.EmailNotificationRequest;
 import uk.gov.hmcts.reform.pcs.notify.service.NotificationService;
 import uk.gov.service.notify.SendEmailResponse;
 import uk.gov.hmcts.reform.pcs.docassembly.service.DocumentAssemblyService;
+import uk.gov.hmcts.reform.pcs.docstore.service.DocStoreHealthService;
 
 import java.net.URI;
 import java.util.Optional;
@@ -29,6 +30,9 @@ class TestingSupportControllerTest {
 
     @Mock
     private DocumentAssemblyService documentAssemblyService;
+
+    @Mock
+    private DocStoreHealthService docStoreHealthService;
 
     @InjectMocks
     private TestingSupportController underTest;
@@ -94,5 +98,18 @@ class TestingSupportControllerTest {
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isEqualTo(expectedMessage);
         verify(documentAssemblyService).getWelcomeMessage(authHeader);
+    }
+
+    @Test
+    void testDocStoreHealth_Success() {
+        String expectedStatus = "{\"status\":\"UP\"}";
+        when(docStoreHealthService.getHealthStatus()).thenReturn(expectedStatus);
+
+        ResponseEntity<String> response = underTest.docStoreHealth();
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).isEqualTo(expectedStatus);
+        verify(docStoreHealthService).getHealthStatus();
     }
 }
