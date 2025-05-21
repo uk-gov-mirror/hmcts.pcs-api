@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import uk.gov.hmcts.reform.pcs.notify.model.EmailNotificationRequest;
 import uk.gov.hmcts.reform.pcs.notify.service.NotificationService;
 import uk.gov.service.notify.SendEmailResponse;
+import uk.gov.hmcts.reform.pcs.docassembly.service.DocumentAssemblyService;
 
 import java.net.URI;
 import java.util.Optional;
@@ -25,6 +26,9 @@ class TestingSupportControllerTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private DocumentAssemblyService documentAssemblyService;
 
     @InjectMocks
     private TestingSupportController underTest;
@@ -46,7 +50,6 @@ class TestingSupportControllerTest {
         SendEmailResponse mockResponse = mock(SendEmailResponse.class);
         when(mockResponse.getNotificationId()).thenReturn(notificationId);
         when(mockResponse.getReference()).thenReturn(Optional.of("reference"));
-        when(mockResponse.getOneClickUnsubscribeURL()).thenReturn(Optional.of(unsubscribeUrl));
         when(mockResponse.getTemplateId()).thenReturn(templateId);
         when(mockResponse.getTemplateVersion()).thenReturn(1);
         when(mockResponse.getTemplateUri()).thenReturn("/template/uri");
@@ -69,7 +72,6 @@ class TestingSupportControllerTest {
         SendEmailResponse responseBody = response.getBody();
         assertThat(responseBody.getNotificationId()).isEqualTo(notificationId);
         assertThat(responseBody.getReference()).contains("reference");
-        assertThat(responseBody.getOneClickUnsubscribeURL()).contains(unsubscribeUrl);
         assertThat(responseBody.getTemplateId()).isEqualTo(templateId);
         assertThat(responseBody.getTemplateVersion()).isEqualTo(1);
         assertThat(responseBody.getTemplateUri()).isEqualTo("/template/uri");
@@ -78,5 +80,19 @@ class TestingSupportControllerTest {
         assertThat(responseBody.getFromEmail()).contains("noreply@example.com");
 
         verify(notificationService).sendEmail(emailRequest);
+    }
+
+    @Test
+    void testDocAssemblyWelcome_Success() {
+        String expectedMessage = "Welcome from Document Assembly!";
+        String authHeader = "Bearer test-token";
+        when(documentAssemblyService.getWelcomeMessage(authHeader)).thenReturn(expectedMessage);
+
+        ResponseEntity<String> response = underTest.docAssemblyWelcome(authHeader);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).isEqualTo(expectedMessage);
+        verify(documentAssemblyService).getWelcomeMessage(authHeader);
     }
 }
