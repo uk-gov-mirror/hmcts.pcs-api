@@ -10,9 +10,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
 import uk.gov.hmcts.reform.pcs.notify.model.EmailNotificationRequest;
 import uk.gov.hmcts.reform.pcs.notify.service.NotificationService;
 import uk.gov.service.notify.SendEmailResponse;
+import uk.gov.hmcts.reform.pcs.docassembly.service.DocumentAssemblyService;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
@@ -29,9 +31,11 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 public class TestingSupportController {
 
     private final NotificationService notificationService;
+    private final DocumentAssemblyService documentAssemblyService;
 
-    public TestingSupportController(NotificationService notificationService) {
+    public TestingSupportController(NotificationService notificationService, DocumentAssemblyService documentAssemblyService) {
         this.notificationService = notificationService;
+        this.documentAssemblyService = documentAssemblyService;
     }
 
     @PostMapping(value = "/send-email", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -44,5 +48,12 @@ public class TestingSupportController {
         SendEmailResponse notificationResponse = notificationService.sendEmail(emailRequest);
 
         return ResponseEntity.ok(notificationResponse);
+    }
+
+    @GetMapping(value = "/docassembly-welcome")
+    public ResponseEntity<String> docAssemblyWelcome(
+        @RequestHeader(value = AUTHORIZATION) String authorisation) {
+        log.info("Testing connection to Document Assembly API welcome endpoint");
+        return ResponseEntity.ok(documentAssemblyService.getWelcomeMessage(authorisation));
     }
 }

@@ -96,6 +96,9 @@ location-reference:
   api-url: ${LOCATION_REF_URL:http://localhost:8089}
   court-county-type-id: ${COURT_COUNTY_TYPE_ID:10}
 
+document-assembly:
+  api-url: ${DOCUMENT_ASSEMBLY_URL:http://localhost:4631}
+
 notify:
   api-key: ${PCS_NOTIFY_API_KEY:AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA}
   status-check-delay-millis: ${NOTIFY_STATUS_CHECK_DELAY:3000}
