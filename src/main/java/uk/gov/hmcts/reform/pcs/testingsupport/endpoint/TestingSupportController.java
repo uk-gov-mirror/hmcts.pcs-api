@@ -35,7 +35,11 @@ public class TestingSupportController {
     private final DocumentAssemblyService documentAssemblyService;
     private final DocStoreHealthService docStoreHealthService;
 
-    public TestingSupportController(NotificationService notificationService, DocumentAssemblyService documentAssemblyService, DocStoreHealthService docStoreHealthService) {
+    public TestingSupportController(
+        NotificationService notificationService,
+        DocumentAssemblyService documentAssemblyService,
+        DocStoreHealthService docStoreHealthService
+    ) {
         this.notificationService = notificationService;
         this.documentAssemblyService = documentAssemblyService;
         this.docStoreHealthService = docStoreHealthService;
