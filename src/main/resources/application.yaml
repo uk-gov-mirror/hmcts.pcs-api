@@ -105,3 +105,6 @@ notify:
 
 testing-support:
   enabled: ${ENABLE_TESTING_SUPPORT:false}
+
+doc-store:
+  api-url: http://localhost:4455

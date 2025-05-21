@@ -15,6 +15,7 @@ import uk.gov.hmcts.reform.pcs.notify.model.EmailNotificationRequest;
 import uk.gov.hmcts.reform.pcs.notify.service.NotificationService;
 import uk.gov.service.notify.SendEmailResponse;
 import uk.gov.hmcts.reform.pcs.docassembly.service.DocumentAssemblyService;
+import uk.gov.hmcts.reform.pcs.docstore.service.DocStoreHealthService;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
@@ -32,10 +33,12 @@ public class TestingSupportController {
 
     private final NotificationService notificationService;
     private final DocumentAssemblyService documentAssemblyService;
+    private final DocStoreHealthService docStoreHealthService;
 
-    public TestingSupportController(NotificationService notificationService, DocumentAssemblyService documentAssemblyService) {
+    public TestingSupportController(NotificationService notificationService, DocumentAssemblyService documentAssemblyService, DocStoreHealthService docStoreHealthService) {
         this.notificationService = notificationService;
         this.documentAssemblyService = documentAssemblyService;
+        this.docStoreHealthService = docStoreHealthService;
     }
 
     @PostMapping(value = "/send-email", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -55,5 +58,11 @@ public class TestingSupportController {
         @RequestHeader(value = AUTHORIZATION) String authorisation) {
         log.info("Testing connection to Document Assembly API welcome endpoint");
         return ResponseEntity.ok(documentAssemblyService.getWelcomeMessage(authorisation));
+    }
+
+    @GetMapping(value = "/doc-store-health")
+    public ResponseEntity<String> docStoreHealth() {
+        log.info("Testing connection to Document Management Store /health endpoint");
+        return ResponseEntity.ok(docStoreHealthService.getHealthStatus());
     }
 }
