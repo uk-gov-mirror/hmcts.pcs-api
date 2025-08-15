@@ -55,8 +55,8 @@ public class CCDCaseRepository extends DecentralisedCaseRepository<PCSCase> {
         PCSCase pcsCase = PCSCase.builder()
             .propertyAddress(convertAddress(pcsCaseEntity.getPropertyAddress()))
             .caseManagementLocation(pcsCaseEntity.getCaseManagementLocation())
-            .preActionProtocolCompleted(pcsCaseEntity.getPreActionProtocolCompleted() != null 
-                ? VerticalYesNo.from(pcsCaseEntity.getPreActionProtocolCompleted()) 
+            .preActionProtocolCompleted(pcsCaseEntity.getPreActionProtocolCompleted() != null
+                ? VerticalYesNo.from(pcsCaseEntity.getPreActionProtocolCompleted())
                 : null)
             .build();
 
@@ -77,6 +77,10 @@ public class CCDCaseRepository extends DecentralisedCaseRepository<PCSCase> {
             pcsCase.setClaimPaymentTabMarkdown(claimPaymentTabRenderer.render(caseRef, paymentStatus));
         }
         pcsCase.setParties(mapAndWrapParties(pcsCaseEntity.getParties()));
+
+        pcsCase.setTestTabMarkdown("""
+                                    Click <a href="/cases/case-details/${[CASE_REFERENCE]}/trigger/urlParamTestEvent?claimId=12345678">here</a> to fire event with URL parameter
+                                    """);
 
         pcsCase.setPageHeadingMarkdown("""
                                        <h3 class="govuk-heading-s">

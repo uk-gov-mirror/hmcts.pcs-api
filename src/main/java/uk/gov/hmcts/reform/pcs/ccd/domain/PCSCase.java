@@ -215,4 +215,7 @@ public class PCSCase {
     @CCD(searchable = false, access = CaseworkerAccess.class)
     private YesOrNo showClaimTypeNotEligibleWales;
 
+    private String testTabMarkdown;
+    private String testEventMarkdown;
+
 }
