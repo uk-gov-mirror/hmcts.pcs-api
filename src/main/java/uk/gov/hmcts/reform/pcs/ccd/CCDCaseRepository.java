@@ -57,9 +57,20 @@ public class CCDCaseRepository extends DecentralisedCaseRepository<PCSCase> {
         boolean hasUnsubmittedCaseData = caseHasUnsubmittedData(caseReference, state);
         pcsCase.setHasUnsubmittedCaseData(YesOrNo.from(hasUnsubmittedCaseData));
 
-        setMarkdownFields(pcsCase);
+//        setMarkdownFields(pcsCase);
+
+//        pcsCase.setParty1(createParty("party1c"));
+//        pcsCase.setParty2(createParty("party2"));
+        pcsCase.setMyPartyList(List.of(createParty("party A from CCDCaseRepository")));
 
         return pcsCase;
+    }
+
+    private static Party createParty(String forename) {
+        return Party.builder()
+            .forename(forename)
+            .surname("surname for " + forename)
+            .build();
     }
 
     private boolean caseHasUnsubmittedData(long caseReference, String state) {
@@ -116,7 +127,7 @@ public class CCDCaseRepository extends DecentralisedCaseRepository<PCSCase> {
 
     private void setMarkdownFields(PCSCase pcsCase) {
         pcsCase.setPageHeadingMarkdown("""
-                <p class="govuk-!-font-size-24 
+                <p class="govuk-!-font-size-24
                 govuk-!-margin-top-0 govuk-!-margin-bottom-0">
                 #${[CASE_REFERENCE]}</p>""");
 

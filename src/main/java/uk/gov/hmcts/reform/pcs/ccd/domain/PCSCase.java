@@ -1,5 +1,8 @@
 package uk.gov.hmcts.reform.pcs.ccd.domain;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import lombok.Builder;
 import lombok.Data;
@@ -10,8 +13,8 @@ import uk.gov.hmcts.ccd.sdk.type.Document;
 import uk.gov.hmcts.ccd.sdk.type.FieldType;
 import uk.gov.hmcts.ccd.sdk.type.ListValue;
 import uk.gov.hmcts.ccd.sdk.type.YesOrNo;
-import uk.gov.hmcts.reform.pcs.ccd.accesscontrol.CitizenAccess;
 import uk.gov.hmcts.reform.pcs.ccd.accesscontrol.CaseworkerReadAccess;
+import uk.gov.hmcts.reform.pcs.ccd.accesscontrol.CitizenAccess;
 import uk.gov.hmcts.reform.pcs.ccd.domain.model.NoRentArrearsReasonForGrounds;
 import uk.gov.hmcts.reform.pcs.ccd.type.DynamicStringList;
 import uk.gov.hmcts.reform.pcs.postcodecourt.model.LegislativeCountry;
@@ -19,7 +22,9 @@ import uk.gov.hmcts.reform.pcs.postcodecourt.model.LegislativeCountry;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static uk.gov.hmcts.ccd.sdk.type.FieldType.DynamicRadioList;
@@ -565,5 +570,41 @@ public class PCSCase {
     @JsonUnwrapped
     @CCD(access = {CitizenAccess.class})
     private NoRentArrearsReasonForGrounds noRentArrearsReasonForGrounds;
+
+    @CCD(
+        typeOverride = FieldType.Collection,
+        typeParameterOverride = "Party"
+    )
+    private List<ListValue<Party>> myPartyList2;
+
+//    @CCD(label = "Test message")
+//    private String myMessage;
+
+    @CCD(label = "Party N")
+    private Party partyToReplace;
+
+    @CCD(ignore = true)
+    @JsonIgnore
+    private List<Party> myPartyList;
+
+    @JsonAnyGetter
+    public Map<String, Party> getPartyListItems() {
+        LinkedHashMap<String, Party> map = new LinkedHashMap<>();
+
+        if (myPartyList != null) {
+            for (int i = 0; i < myPartyList.size(); i++) {
+                Party party = myPartyList.get(i);
+                map.put("myPartyList_" + i, party);
+            }
+        }
+
+        return map;
+    }
+
+    @JsonAnySetter
+    public void addPartyListItem(String key, Party party) {
+        System.out.printf("Adding %s -> %s%n", key, party);
+//        properties.put(key, value);
+    }
 
 }

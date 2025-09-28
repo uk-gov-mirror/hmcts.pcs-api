@@ -26,9 +26,10 @@ public class Party {
     @CCD(typeOverride = FieldType.Email)
     private String contactEmail;
 
+    @CCD(label = "Contact address")
     private AddressUK contactAddress;
 
-    @CCD(typeOverride = FieldType.PhoneUK)
+    @CCD(label = "Contact phone", typeOverride = FieldType.PhoneUK)
     private String contactPhone;
 
     @CCD(typeOverride = FieldType.Text, showCondition = NEVER_SHOW)

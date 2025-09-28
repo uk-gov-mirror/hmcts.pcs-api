@@ -8,5 +8,6 @@ public enum EventId {
     createPossessionClaim,
     processClaimPayment,
     resumePossessionClaim,
+    multiPartyTest
 
 }
