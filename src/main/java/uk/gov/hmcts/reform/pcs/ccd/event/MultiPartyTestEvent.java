@@ -115,7 +115,7 @@ public class MultiPartyTestEvent implements CCDConfig<PCSCase, State, UserRole> 
                 .build())
             .toList();
 
-        caseData.setMyPartyList(myPartyList);
+//        caseData.setMyPartyList(myPartyList);
 //        caseData.setMyMessage("Test message here");
 
 //        caseData.setParty1(Party.builder().forename("party1").build());
@@ -125,6 +125,8 @@ public class MultiPartyTestEvent implements CCDConfig<PCSCase, State, UserRole> 
     }
 
     private void submit(EventPayload<PCSCase, State> eventPayload) {
+        PCSCase caseData = eventPayload.caseData();
 
+        System.out.println(caseData);
     }
 }

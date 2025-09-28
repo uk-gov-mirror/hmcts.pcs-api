@@ -70,6 +70,13 @@ public class CCDCaseRepository extends DecentralisedCaseRepository<PCSCase> {
         return Party.builder()
             .forename(forename)
             .surname("surname for " + forename)
+            .contactAddress(AddressUK.builder()
+                                .addressLine1("123 Baker Street")
+                                .addressLine2("Marylebone")
+                                .postTown("London")
+                                .county("Greater London")
+                                .postCode("NW1 6XE")
+                                .build())
             .build();
     }
 
