@@ -21,6 +21,7 @@ import uk.gov.hmcts.reform.pcs.postcodecourt.model.LegislativeCountry;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -585,7 +586,8 @@ public class PCSCase {
 
     @CCD(ignore = true)
     @JsonIgnore
-    private List<Party> myPartyList;
+    @Builder.Default
+    private List<Party> myPartyList = new ArrayList<>();
 
     @JsonAnyGetter
     public Map<String, Party> getPartyListItems() {
@@ -603,7 +605,14 @@ public class PCSCase {
 
     @JsonAnySetter
     public void addPartyListItem(String key, Party party) {
-        System.out.printf("Adding %s -> %s%n", key, party);
+        String[] parts = key.split("-");
+        int index = Integer.parseInt(parts[1]);
+
+        while (index >= myPartyList.size()) {
+            myPartyList.add(null);
+        }
+        System.out.printf("Adding %s -> %s at index %d %n", key, party, index);
+        myPartyList.set(index, party);
 //        properties.put(key, value);
     }
 

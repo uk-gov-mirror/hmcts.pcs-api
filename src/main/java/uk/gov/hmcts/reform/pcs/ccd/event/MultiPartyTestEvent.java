@@ -108,14 +108,14 @@ public class MultiPartyTestEvent implements CCDConfig<PCSCase, State, UserRole> 
 //            .map(party -> new ListValue<>(party.getForename(), party))
 //            .toList();
 
-        List<Party> myPartyList = Stream.of("P1", "P2", "P3", "P4")
+        List<Party> myPartyList = Stream.of("P1b")
             .map(forname -> Party.builder()
                 .forename(forname)
                 .surname("Surname for " + forname)
                 .build())
             .toList();
 
-//        caseData.setMyPartyList(myPartyList);
+        caseData.setMyPartyList(myPartyList);
 //        caseData.setMyMessage("Test message here");
 
 //        caseData.setParty1(Party.builder().forename("party1").build());
