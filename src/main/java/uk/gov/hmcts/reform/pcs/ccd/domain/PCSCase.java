@@ -605,7 +605,7 @@ public class PCSCase {
 
     @JsonAnySetter
     public void addPartyListItem(String key, Party party) {
-        String[] parts = key.split("-");
+        String[] parts = key.split("_");
         int index = Integer.parseInt(parts[1]);
 
         while (index >= myPartyList.size()) {
