@@ -586,8 +586,7 @@ public class PCSCase {
 
     @CCD(ignore = true)
     @JsonIgnore
-    @Builder.Default
-    private List<Party> myPartyList = new ArrayList<>();
+    private List<Party> myPartyList;
 
     @JsonAnyGetter
     public Map<String, Party> getPartyListItems() {
@@ -607,6 +606,10 @@ public class PCSCase {
     public void addPartyListItem(String key, Party party) {
         String[] parts = key.split("_");
         int index = Integer.parseInt(parts[1]);
+
+        if (myPartyList == null) {
+            myPartyList = new ArrayList<>();
+        }
 
         while (index >= myPartyList.size()) {
             myPartyList.add(null);
