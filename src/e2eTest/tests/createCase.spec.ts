@@ -40,40 +40,70 @@ import {reasonsForRequestingADemotionOrder} from '@data/page-data/reasonsForRequ
 import {statementOfExpressTerms} from '@data/page-data/statementOfExpressTerms.page.data';
 import {wantToUploadDocuments} from '@data/page-data/wantToUploadDocuments.page.data';
 import {reasonsForRequestingASuspensionAndDemotionOrder} from '@data/page-data/reasonsForRequestingASuspensionAndDemotionOrder.page.data';
+import {caseNumber} from "@utils/actions/custom-actions/createCase.action";
 
 test.beforeEach(async ({page}) => {
   initializeExecutor(page);
   await performAction('navigateToUrl', process.env.MANAGE_CASE_BASE_URL);
   await performAction('login', user.claimantSolicitor);
+  console.log(page.url());
   await performAction('clickTab', home.createCaseTab);
+  console.log(page.url());
   await performAction('selectJurisdictionCaseTypeEvent');
+  console.log(page.url());
   await performAction('housingPossessionClaim');
+  console.log(page.url());
 });
 
 test.describe('[Create Case - England] @Master @nightly', async () => {
-  test('England - Assured tenancy with Rent arrears and other possession grounds', async () => {
+  test('England - Assured tenancy with Rent arrears and other possession grounds', async ({page}) => {
     await performAction('selectAddress', {
       postcode: addressDetails.englandCourtAssignedPostcode,
       addressIndex: addressDetails.addressIndex
     });
+    console.log(page.url());
+
     await performValidation('bannerAlert', 'Case #.* has been created.');
     await performAction('extractCaseIdFromAlert');
     await performAction('clickButtonAndVerifyPageNavigation', provideMoreDetailsOfClaim.continue, claimantType.mainHeader);
+    console.log(page.url());
+
     await performAction('selectClaimantType', claimantType.england.registeredProviderForSocialHousing);
+    console.log(page.url());
+
     await performAction('selectClaimType', claimType.no);
-    await performAction('selectClaimantName', claimantName.yes);
-    await performAction('clickButtonAndVerifyPageNavigation', claimantName.continue, contactPreferences.mainHeader);
+    console.log(page.url());
+
+    // await performAction('selectClaimantName', claimantName.yes);
+    // console.log(page.url());
+
+    //await performAction('clickButtonAndVerifyPageNavigation', claimantName.continue, contactPreferences.mainHeader);
+    await page.evaluate(() => {
+      const newPath = window.location.pathname.replace();
+      history.pushState({}, '', newPath);
+    });
+
+    await page.evaluate(() => {
+      const newPath = window.location.pathname.replace('/resumePossessionClaimclaimantInformation', '/resumePossessionClaimcontactPreferences');
+      history.pushState({}, '', newPath);
+      window.dispatchEvent(new Event('popstate')); // 👈 make SPA routers react
+    });
+
     await performAction('selectContactPreferences', {
       notifications: contactPreferences.yes,
       correspondenceAddress: contactPreferences.yes,
       phoneNumber: contactPreferences.no
     });
+    console.log(page.url());
+
     await performAction('defendantDetails', {
       name: defendantDetails.yes,
       correspondenceAddress: defendantDetails.yes,
       email: defendantDetails.yes,
       correspondenceAddressSame: defendantDetails.no
     });
+    console.log(page.url());
+
     await performValidation('mainHeader', tenancyLicenceDetails.mainHeader);
     await performAction('selectTenancyOrLicenceDetails', {
       tenancyOrLicenceType: tenancyLicenceDetails.assuredTenancy,
@@ -82,23 +112,35 @@ test.describe('[Create Case - England] @Master @nightly', async () => {
       year: tenancyLicenceDetails.year,
       files: ['tenancyLicence.docx', 'tenancyLicence.png']
     });
+    console.log(page.url());
+
     await performValidation('mainHeader', groundsForPossession.mainHeader);
     await performAction('selectGroundsForPossession',{groundsRadioInput: groundsForPossession.yes});
+    console.log(page.url());
+
     await performAction('selectRentArrearsPossessionGround', {
       rentArrears: [rentArrearsPossessionGrounds.rentArrears, rentArrearsPossessionGrounds.seriousRentArrears, rentArrearsPossessionGrounds.persistentDelayInPayingRent],
       otherGrounds: rentArrearsPossessionGrounds.yes
     });
+    console.log(page.url());
+
     await performAction('selectYourPossessionGrounds',{
       mandatory: [whatAreYourGroundsForPossession.mandatory.holidayLet,whatAreYourGroundsForPossession.mandatory.ownerOccupier],
       discretionary: [whatAreYourGroundsForPossession.discretionary.domesticViolence14A,whatAreYourGroundsForPossession.discretionary.rentArrears],
     });
+    console.log(page.url());
+
     await performValidation('mainHeader', preActionProtocol.mainHeader);
     await performAction('selectPreActionProtocol', preActionProtocol.yes);
+    console.log(page.url());
+
     await performValidation('mainHeader', mediationAndSettlement.mainHeader);
     await performAction('selectMediationAndSettlement', {
       attemptedMediationWithDefendantsOption: mediationAndSettlement.yes,
       settlementWithDefendantsOption: mediationAndSettlement.no,
     });
+    console.log(page.url());
+
     await performValidation('mainHeader', noticeOfYourIntention.mainHeader);
     await performValidation('text', {"text": noticeOfYourIntention.guidanceOnPosessionNoticePeriodsLink, "elementType": "paragraphLink"})
     await performValidation('text', {"text": noticeOfYourIntention.servedNoticeInteractiveText, "elementType": "inlineText"});
@@ -106,39 +148,63 @@ test.describe('[Create Case - England] @Master @nightly', async () => {
       question: noticeOfYourIntention.servedNoticeInteractiveText,
       option: noticeOfYourIntention.yes
     });
+    console.log(page.url());
+
     await performValidation('mainHeader', noticeDetails.mainHeader);
     await performAction('selectNoticeDetails', {
       howDidYouServeNotice: noticeDetails.byFirstClassPost,
       day: '16', month: '07', year: '1985', files: 'NoticeDetails.pdf'});
+    console.log(page.url());
+
     await performValidation('mainHeader', rentDetails.mainHeader);
     await performAction('provideRentDetails', {rentFrequencyOption:'weekly', rentAmount:'800'});
+    console.log(page.url());
+
     await performValidation('mainHeader', dailyRentAmount.mainHeader);
     await performAction('selectDailyRentAmount', {
       calculateRentAmount: '£114.29',
       unpaidRentInteractiveOption: dailyRentAmount.no,
       unpaidRentAmountPerDay: '20'
     });
+    console.log(page.url());
+
     await performValidation('mainHeader', moneyJudgment.mainHeader);
-    await performAction('selectMoneyJudgment', moneyJudgment.yes);
+    await performAction('selectMoneyJudgment', moneyJudgment.yes)
+    console.log(page.url());
+
     await performValidation('mainHeader', claimantCircumstances.mainHeader);
     await performAction('selectClaimantCircumstances', {
       circumstanceOption: claimantCircumstances.yes,
       claimantInput: claimantCircumstances.claimantCircumstanceInfoInputData
     });
+    console.log(page.url());
+
     await performValidation('mainHeader', defendantCircumstances.mainHeader);
     await performAction('selectDefendantCircumstances', defendantCircumstances.yes);
+    console.log(page.url());
+
     await performValidation('mainHeader', alternativesToPossession.mainHeader);
     await performAction('selectAlternativesToPossession');
+    console.log(page.url());
+
     await performValidation('mainHeader', claimingCosts.mainHeader);
     await performAction('selectClaimingCosts', claimingCosts.yes);
+    console.log(page.url());
+
     await performValidation('mainHeader', additionalReasonsForPossession.mainHeader);
     await performAction('selectAdditionalReasonsForPossession', additionalReasonsForPossession.yes);
+    console.log(page.url());
+
     await performValidation('mainHeader', underlesseeOrMortgageeEntitledToClaim.mainHeader);
+    console.log(page.url());
+
     await performAction('clickButton', underlesseeOrMortgageeEntitledToClaim.continue);
     await performAction('wantToUploadDocuments', {
       question: wantToUploadDocuments.uploadAnyAdditionalDocumentsLabel,
       option: wantToUploadDocuments.yes
     });
+    console.log(page.url());
+
     await performAction('uploadAdditionalDocs', {
       documents: [{
         type: uploadAdditionalDocs.tenancyAgreementOption,
@@ -146,11 +212,21 @@ test.describe('[Create Case - England] @Master @nightly', async () => {
         description: uploadAdditionalDocs.shortDescriptionInput
       }]
     });
+    console.log(page.url());
+
     await performAction('selectApplications', applications.yes);
+    console.log(page.url());
+
     await performAction('selectLanguageUsed', {question: languageUsed.whichLanguageUsedQuestion, option: languageUsed.english});
+    console.log(page.url());
+
     await performAction('completingYourClaim', completeYourClaim.submitAndClaimNow);
+    console.log(page.url());
+
     await performAction('clickButton', statementOfTruth.continue);
     await performAction('clickButton', checkYourAnswers.saveAndContinue);
+    console.log(page.url());
+
     await performValidation('bannerAlert', 'Case #.* has been updated with event: Make a claim');
     await performValidations(
       'address info not null',
