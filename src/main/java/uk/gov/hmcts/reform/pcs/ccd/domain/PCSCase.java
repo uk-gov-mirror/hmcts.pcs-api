@@ -33,6 +33,31 @@ import static uk.gov.hmcts.ccd.sdk.type.FieldType.TextArea;
 @Data
 public class PCSCase {
 
+    @CCD(label = "Are you also making a claim for an order imposing a prohibited conduct standard contract")
+    private VerticalYesNo question1;
+
+    @CCD(label = "Have you and the contract holder agreed terms of the periodic standard contract " +
+        "in addition to those incorporated by statute?")
+    private VerticalYesNo question2;
+
+    @CCD(
+        label = "Give details of the terms you've agreed",
+        hint = "You can enter up to 500 characters",
+        max = 500,
+        typeOverride = TextArea
+    )
+    private String detailsOfTerms;
+
+    @CCD(
+        label = "Why are you making this claim?",
+        hint = "You can enter up to 500 characters",
+        max = 500,
+        typeOverride = TextArea
+    )
+    private String whyMakingClaim;
+
+    private WrappedQuestion wrappedQuestion;
+
     @CCD(
         searchable = false
     )
