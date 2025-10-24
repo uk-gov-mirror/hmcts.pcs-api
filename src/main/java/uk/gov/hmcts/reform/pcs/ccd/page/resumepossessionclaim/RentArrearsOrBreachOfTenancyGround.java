@@ -9,6 +9,8 @@ import uk.gov.hmcts.reform.pcs.ccd.domain.PCSCase;
 import uk.gov.hmcts.reform.pcs.ccd.domain.RentArrearsOrBreachOfTenancy;
 import uk.gov.hmcts.reform.pcs.ccd.domain.State;
 
+import static uk.gov.hmcts.reform.pcs.ccd.ShowConditions.NEVER_SHOW;
+
 public class RentArrearsOrBreachOfTenancyGround implements CcdPageConfiguration {
 
     @Override
@@ -19,6 +21,7 @@ public class RentArrearsOrBreachOfTenancyGround implements CcdPageConfiguration 
             .showCondition("typeOfTenancyLicence=\"SECURE_TENANCY\" OR typeOfTenancyLicence=\"FLEXIBLE_TENANCY\""
                                + " AND secureOrFlexibleDiscretionaryGroundsCONTAINS"
                                + "\"RENT_ARREARS_OR_BREACH_OF_TENANCY\"")
+            .readonly(PCSCase::getShowRentDetailsPage, NEVER_SHOW)
             .label("rentArrearsOrBreachOfTenancyGround-lineSeparator", "---")
             .mandatory(PCSCase::getRentArrearsOrBreachOfTenancy);
     }
@@ -26,11 +29,19 @@ public class RentArrearsOrBreachOfTenancyGround implements CcdPageConfiguration 
     private AboutToStartOrSubmitResponse<PCSCase, State> midEvent(CaseDetails<PCSCase, State> details,
                                                                   CaseDetails<PCSCase, State> detailsBefore) {
         PCSCase caseData = details.getData();
+
+        // Set flag for showing breach of tenancy textarea
         if (caseData.getRentArrearsOrBreachOfTenancy().contains(RentArrearsOrBreachOfTenancy.BREACH_OF_TENANCY)) {
             caseData.setShowBreachOfTenancyTextarea(YesOrNo.YES);
         } else {
             caseData.setShowBreachOfTenancyTextarea(YesOrNo.NO);
         }
+
+        // Determine if Rent Details page should be shown (HDPI-2123 AC03-AC06)
+        // Show rent details if "Rent arrears" is selected for Secure/Flexible tenancy
+        boolean hasRentArrears = caseData.getRentArrearsOrBreachOfTenancy()
+            .contains(RentArrearsOrBreachOfTenancy.RENT_ARREARS);
+        caseData.setShowRentDetailsPage(YesOrNo.from(hasRentArrears));
 
         return AboutToStartOrSubmitResponse.<PCSCase, State>builder()
                 .data(caseData)

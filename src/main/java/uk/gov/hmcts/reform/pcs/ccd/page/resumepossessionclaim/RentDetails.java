@@ -22,16 +22,16 @@ public class RentDetails implements CcdPageConfiguration {
         pageBuilder
                 .page("rentDetails", this::midEvent)
                 .pageLabel("Rent details")
-                .showCondition("groundsForPossession=\"Yes\"")
-                .label("rentDetails-content",
-                        """
-                        ---
-                        """)
+                .showCondition(
+                        "groundsForPossession=\"Yes\" OR "
+                                + "(typeOfTenancyLicence=\"ASSURED_TENANCY\" AND showRentDetailsPage=\"Yes\") OR "
+                                + "(typeOfTenancyLicence=\"SECURE_TENANCY\" AND showRentDetailsPage=\"Yes\") OR "
+                                + "(typeOfTenancyLicence=\"FLEXIBLE_TENANCY\" AND showRentDetailsPage=\"Yes\")")
+                .label("rentDetails-content", "---")
                 .mandatory(PCSCase::getCurrentRent)
                 .mandatory(PCSCase::getRentFrequency)
                 .mandatory(PCSCase::getOtherRentFrequency, "rentFrequency=\"OTHER\"")
-                .mandatory(PCSCase::getDailyRentChargeAmount, "rentFrequency=\"OTHER\"")
-                .readonly(PCSCase::getCalculatedDailyRentChargeAmount, NEVER_SHOW);
+                .mandatory(PCSCase::getDailyRentChargeAmount, "rentFrequency=\"OTHER\"");
     }
 
     private AboutToStartOrSubmitResponse<PCSCase, State> midEvent(CaseDetails<PCSCase, State> details,
