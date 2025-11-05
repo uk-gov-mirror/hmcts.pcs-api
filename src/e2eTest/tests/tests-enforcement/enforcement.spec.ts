@@ -13,6 +13,7 @@ import { riskPosedByEveryoneAtProperty } from "@data/page-data/page-data-enforce
 import { vulnerableAdultsAndChildren } from "@data/page-data/page-data-enforcement/vulnerableAdultsAndChildren.page.data";
 import { evictionCouldBeDelayed } from "@data/page-data/page-data-enforcement/evictionCouldBeDelayed.page.data";
 import { signInOrCreateAnAccount } from "@data/page-data/signInOrCreateAnAccount.page.data";
+import { accessToTheProperty } from "@data/page-data/page-data-enforcement/accessToTheProperty.page.data";
 
 test.beforeEach(async ({ page }) => {
   initializeExecutor(page);
@@ -44,6 +45,12 @@ test.describe('[Enforcement - Warrant of Possession] @Master @nightly', async ()
     await performValidation('mainHeader', everyoneLivingAtTheProperty.mainHeader);
     await performAction('selectPoseRiskToBailiff', { question: everyoneLivingAtTheProperty.riskToBailiffQuestion, option: everyoneLivingAtTheProperty.yes });
     await performValidation('mainHeader', riskPosedByEveryoneAtProperty.mainHeader);
+    await performAction('clickButton', riskPosedByEveryoneAtProperty.continue);
+    await performValidation('mainHeader', vulnerableAdultsAndChildren.mainHeader);
+    await performAction('clickButton', vulnerableAdultsAndChildren.continue);   
+    await performValidation('mainHeader', evictionCouldBeDelayed.mainHeader);
+    await performAction('clickButton', evictionCouldBeDelayed.continue);    
+    await performValidation('mainHeader', accessToTheProperty.mainHeader);  
   });
 
   test('Apply for a Warrant of Possession - risk to Bailiff [No]', async () => {

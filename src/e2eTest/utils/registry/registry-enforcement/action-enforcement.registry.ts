@@ -33,6 +33,7 @@ export class ActionEnforcementRegistry {
     ['selectApplicationType', new EnforcementAction()],
     ['selectNameAndAddressForEviction', new EnforcementAction()],
     ['selectPoseRiskToBailiff', new EnforcementAction()],
+    ['selectAccessToTheProperty', new EnforcementAction()],
   ]);
 
   static getAction(actionName: string): IAction {

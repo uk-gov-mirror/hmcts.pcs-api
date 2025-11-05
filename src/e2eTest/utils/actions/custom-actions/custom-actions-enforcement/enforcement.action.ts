@@ -7,6 +7,7 @@ import { nameAndAddressForEviction } from "@data/page-data/page-data-enforcement
 import { everyoneLivingAtTheProperty } from "@data/page-data/page-data-enforcement/everyoneLivingAtTheProperty.page.data";
 import { vulnerableAdultsAndChildren } from "@data/page-data/page-data-enforcement/vulnerableAdultsAndChildren.page.data";
 import { evictionCouldBeDelayed } from "@data/page-data/page-data-enforcement/evictionCouldBeDelayed.page.data";
+import { accessToTheProperty } from "@data/page-data/page-data-enforcement/accessToTheProperty.page.data";
 
 export class EnforcementAction implements IAction {
   async execute(page: Page, action: string, fieldName: string | actionRecord, data?: actionData): Promise<void> {
@@ -38,5 +39,11 @@ export class EnforcementAction implements IAction {
     await performValidation('text', { elementType: 'paragraph', text: 'Case number: ' + enforcementTestCaseNumber });
     await performAction('clickRadioButton', { question: riskToBailiff.question, option: riskToBailiff.option });
     await performAction('clickButton', everyoneLivingAtTheProperty.continue);
+  }
+
+  private async selectAccessToTheProperty(difficultToAccess: actionRecord) {
+    await performValidation('text', { elementType: 'paragraph', text: 'Case number: ' + enforcementTestCaseNumber });
+    await performAction('clickRadioButton', { question: difficultToAccess.question, option: difficultToAccess.option });
+    await performAction('clickButton', accessToTheProperty.continue);
   }
 }
