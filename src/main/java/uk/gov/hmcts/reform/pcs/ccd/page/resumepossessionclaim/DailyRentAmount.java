@@ -8,7 +8,6 @@ import uk.gov.hmcts.reform.pcs.ccd.common.CcdPageConfiguration;
 import uk.gov.hmcts.reform.pcs.ccd.common.PageBuilder;
 import uk.gov.hmcts.reform.pcs.ccd.domain.PCSCase;
 import uk.gov.hmcts.reform.pcs.ccd.domain.State;
-import uk.gov.hmcts.reform.pcs.ccd.domain.VerticalYesNo;
 
 public class DailyRentAmount implements CcdPageConfiguration {
 
@@ -40,12 +39,7 @@ public class DailyRentAmount implements CcdPageConfiguration {
             CaseDetails<PCSCase, State> detailsBefore) {
         PCSCase caseData = details.getData();
 
-        // Set showRentArrears based on whether the daily rent amount is correct
-        if (caseData.getRentPerDayCorrect() == VerticalYesNo.NO) {
-            caseData.setShowRentArrears(YesOrNo.YES);
-        } else {
-            caseData.setShowRentArrears(YesOrNo.NO);
-        }
+        caseData.setShowRentArrears(YesOrNo.YES);
 
         return AboutToStartOrSubmitResponse.<PCSCase, State>builder()
                 .data(caseData)

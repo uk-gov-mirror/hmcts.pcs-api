@@ -25,16 +25,5 @@ public interface RentSectionRoutingPolicy {
      * @return true if this policy can handle the tenancy type, false otherwise
      */
     boolean supports(TenancyLicenceType tenancyType);
-
-    /**
-     * Returns the show condition string for the Rent Arrears page.
-     * Default implementation provides a simple condition using helper fields.
-     * Can be overridden by specific policies if needed.
-     *
-     * @return the show condition string for Rent Arrears page
-     */
-    default String showRentArrears() {
-        return "showRentSection=\"Yes\" AND showRentArrears=\"Yes\"";
-    }
 }
 
