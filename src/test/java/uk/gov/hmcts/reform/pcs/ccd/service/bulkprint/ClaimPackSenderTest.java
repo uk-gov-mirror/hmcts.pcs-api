@@ -62,12 +62,12 @@ class ClaimPackSenderTest {
     @DisplayName("Posts each resolved recipient and records the document sent")
     void shouldPostResolvedRecipientAndRecordDocumentSent() {
         when(packRecipientResolver.resolveClaimRecipients(CASE_ID)).thenReturn(List.of(resolvedRecipient()));
-        when(bulkPrintService.sendPack(any(), any(), any(), any(), any(), any())).thenReturn(UUID.randomUUID());
+        when(bulkPrintService.sendPack(any(), any(), any(), any(), any(), any(), any())).thenReturn(UUID.randomUUID());
 
         underTest.sendClaimPacks(CASE_ID);
 
         verify(bulkPrintService).sendPack(pcsCase, recipient,
-            LetterType.CLAIMANT_CLAIM_PACK, "Acme Ltd", address, List.of(claimForm));
+            LetterType.CLAIMANT_CLAIM_PACK, "Acme Ltd", address, null, List.of(claimForm));
         verify(accessCodeActivityLogService).recordPackSent(eq(pcsCase), eq(recipient), any(PackDetails.class));
         verify(accessCodeActivityLogService, never()).recordPackFailed(any(), any(), any());
     }
@@ -76,7 +76,7 @@ class ClaimPackSenderTest {
     @DisplayName("Records a document-send failure when the send throws a missing address")
     void shouldRecordFailureWhenSendThrowsMissingAddress() {
         when(packRecipientResolver.resolveClaimRecipients(CASE_ID)).thenReturn(List.of(resolvedRecipient()));
-        when(bulkPrintService.sendPack(any(), any(), any(), any(), any(), any()))
+        when(bulkPrintService.sendPack(any(), any(), any(), any(), any(), any(), any()))
             .thenThrow(new MissingPostalAddressException("no address"));
 
         underTest.sendClaimPacks(CASE_ID);
@@ -86,6 +86,6 @@ class ClaimPackSenderTest {
 
     private ResolvedRecipient resolvedRecipient() {
         return new ResolvedRecipient(pcsCase, recipient, LetterType.CLAIMANT_CLAIM_PACK, List.of(claimForm),
-            "Acme Ltd", address);
+            "Acme Ltd", address, null);
     }
 }

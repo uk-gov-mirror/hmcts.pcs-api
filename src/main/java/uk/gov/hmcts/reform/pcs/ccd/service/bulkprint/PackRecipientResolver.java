@@ -1,9 +1,11 @@
 package uk.gov.hmcts.reform.pcs.ccd.service.bulkprint;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.ccd.sdk.type.AddressUK;
 import uk.gov.hmcts.reform.pcs.ccd.entity.AddressEntity;
+import uk.gov.hmcts.reform.pcs.ccd.entity.ClaimEntity;
 import uk.gov.hmcts.reform.pcs.ccd.entity.DocumentEntity;
 import uk.gov.hmcts.reform.pcs.ccd.entity.PcsCaseEntity;
 import uk.gov.hmcts.reform.pcs.ccd.entity.party.PartyEntity;
@@ -15,6 +17,9 @@ import uk.gov.hmcts.reform.pcs.ccd.util.AddressMapper;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
+
+import static uk.gov.hmcts.reform.pcs.ccd.service.form.PartyDisplayMapper.partiesByRole;
 
 /**
  * Resolves each pack recipient (name + postal address) in a read-only transaction, so the senders can post
@@ -79,7 +84,7 @@ public class PackRecipientResolver {
         PartyRole role = candidate.recipientType();
         return new ResolvedRecipient(pcsCase, recipient, claimLetterType(role), candidate.documents(),
             recipientAddressResolver.resolveDisplayName(recipient),
-            postalAddress(recipient, role, pcsCase.getPropertyAddress()));
+            postalAddress(recipient, role, pcsCase.getPropertyAddress()), null);
     }
 
     private ResolvedRecipient resolveDefenceRecipient(PcsCaseEntity pcsCase, DefencePackCandidate candidate) {
@@ -88,7 +93,7 @@ public class PackRecipientResolver {
         List<DocumentEntity> documents = candidate.documents();
         return new ResolvedRecipient(pcsCase, recipient, defenceLetterType(documents), documents,
             recipientAddressResolver.resolveDisplayName(recipient),
-            correspondenceAddress(recipient, role, pcsCase.getPropertyAddress()));
+            correspondenceAddress(recipient, role, pcsCase.getPropertyAddress()), null);
     }
 
     // DEF-01-IN1 when any form comes from a legal representative's response.
@@ -103,7 +108,40 @@ public class PackRecipientResolver {
         PartyRole role = candidate.role();
         return new ResolvedRecipient(pcsCase, recipient, LetterType.GEN_APP_PACK, candidate.documents(),
             recipientAddressResolver.resolveDisplayName(recipient),
-            correspondenceAddress(recipient, role, pcsCase.getPropertyAddress()));
+            correspondenceAddress(recipient, role, pcsCase.getPropertyAddress()), caseName(pcsCase));
+    }
+
+    // "Claimant v Defendant" from the lead party in each role, resolved in-transaction for the cover letter.
+    private String caseName(PcsCaseEntity pcsCase) {
+        if (pcsCase.getClaims().isEmpty()) {
+            return null;
+        }
+        ClaimEntity claim = pcsCase.getClaims().getFirst();
+        String claimant = leadPartyName(partiesByRole(claim, PartyRole.CLAIMANT));
+        String defendant = leadPartyName(partiesByRole(claim, PartyRole.DEFENDANT));
+        if (claimant == null && defendant == null) {
+            return null;
+        }
+        return StringUtils.defaultString(claimant) + " v " + StringUtils.defaultString(defendant);
+    }
+
+    private String leadPartyName(List<PartyEntity> parties) {
+        return parties.stream()
+            .filter(party -> !party.isRemoved())
+            .map(this::partyName)
+            .filter(StringUtils::isNotBlank)
+            .findFirst()
+            .orElse(null);
+    }
+
+    private String partyName(PartyEntity party) {
+        if (StringUtils.isNotBlank(party.getOrgName())) {
+            return party.getOrgName();
+        }
+        return Stream.of(party.getFirstName(), party.getLastName())
+            .filter(StringUtils::isNotBlank)
+            .reduce((a, b) -> a + " " + b)
+            .orElse(null);
     }
 
     private AddressUK correspondenceAddress(PartyEntity recipient, PartyRole role, AddressEntity propertyAddress) {

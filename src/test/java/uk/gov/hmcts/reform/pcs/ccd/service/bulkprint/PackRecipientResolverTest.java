@@ -11,8 +11,10 @@ import org.mockito.quality.Strictness;
 import uk.gov.hmcts.ccd.sdk.type.AddressUK;
 import uk.gov.hmcts.reform.pcs.ccd.domain.statementoftruth.StatementOfTruthCompletedBy;
 import uk.gov.hmcts.reform.pcs.ccd.entity.AddressEntity;
+import uk.gov.hmcts.reform.pcs.ccd.entity.ClaimEntity;
 import uk.gov.hmcts.reform.pcs.ccd.entity.DocumentEntity;
 import uk.gov.hmcts.reform.pcs.ccd.entity.PcsCaseEntity;
+import uk.gov.hmcts.reform.pcs.ccd.entity.party.ClaimPartyEntity;
 import uk.gov.hmcts.reform.pcs.ccd.entity.claim.StatementOfTruthEntity;
 import uk.gov.hmcts.reform.pcs.ccd.entity.party.PartyEntity;
 import uk.gov.hmcts.reform.pcs.ccd.entity.party.PartyRole;
@@ -228,6 +230,31 @@ class PackRecipientResolverTest {
             assertThat(recipient.address()).isEqualTo(addressUk);
             assertThat(recipient.documents()).containsExactly(defenceForm);
         });
+    }
+
+    @Test
+    @DisplayName("Sets the case name to 'Claimant v Defendant' on a gen-app recipient")
+    void shouldSetCaseNameOnGenAppRecipient() {
+        PartyEntity claimantParty = PartyEntity.builder().id(UUID.randomUUID()).orgName("Acme Ltd").build();
+        PartyEntity defendantParty = PartyEntity.builder().id(UUID.randomUUID())
+            .firstName("Bob").lastName("Tenant").build();
+        ClaimEntity claim = ClaimEntity.builder().claimParties(List.of(
+            ClaimPartyEntity.builder().party(claimantParty).role(PartyRole.CLAIMANT).rank(1).build(),
+            ClaimPartyEntity.builder().party(defendantParty).role(PartyRole.DEFENDANT).rank(1).build())).build();
+        PcsCaseEntity caseWithClaim = PcsCaseEntity.builder()
+            .caseReference(1234567890123456L).claims(List.of(claim)).build();
+        AddressUK addressUk = AddressUK.builder().addressLine1("42 Renters Way").build();
+        when(pcsCaseRepository.findById(CASE_ID)).thenReturn(Optional.of(caseWithClaim));
+        when(genAppPackSelector.findGenAppPackCandidates(caseWithClaim))
+            .thenReturn(List.of(new GenAppPackCandidate(PartyRole.DEFENDANT, defendantParty, List.of(defenceForm))));
+        when(recipientAddressResolver.resolveDisplayName(defendantParty)).thenReturn("Bob Tenant");
+        when(defenceCorrespondenceAddressResolver.resolveCorrespondenceAddress(
+            defendantParty, caseWithClaim.getPropertyAddress())).thenReturn(addressUk);
+
+        List<ResolvedRecipient> resolved = underTest.resolveGenAppRecipients(CASE_ID);
+
+        assertThat(resolved).singleElement()
+            .satisfies(recipient -> assertThat(recipient.caseName()).isEqualTo("Acme Ltd v Bob Tenant"));
     }
 
     @Test

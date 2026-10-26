@@ -2,6 +2,8 @@ package uk.gov.hmcts.reform.pcs.ccd.service.bulkprint;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import uk.gov.hmcts.ccd.sdk.type.YesOrNo;
+import uk.gov.hmcts.reform.pcs.ccd.entity.legalrepresentative.ClaimPartyOrganisationEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -86,18 +88,18 @@ class GenAppPackSelectorTest {
     }
 
     @Test
-    @DisplayName("Defendant self-serve with-notice GAs produce one candidate per postal party")
+    @DisplayName("Defendant self-serve with-notice GAs produce one candidate per postal party, excluding the applicant")
     void shouldProduceOneCandidatePerPartyForDefendantSelfServeWithNoticeApplications() {
         when(claimActivityLogRepository.findAllByPcsCase_Id(CASE_ID)).thenReturn(List.of());
 
         List<GenAppPackCandidate> result = underTest.findGenAppPackCandidates(caseWith(
             List.of(defendantSelfServeWithNoticeGa(withNoticePdf, defendant)), claimant, defendant, coDefendant));
 
-        assertThat(result).hasSize(3);
+        assertThat(result).extracting(candidate -> candidate.recipient().getId())
+            .containsExactly(claimant.getId(), coDefendant.getId());
         assertThat(candidateFor(result, claimant).role()).isEqualTo(PartyRole.CLAIMANT);
         assertThat(candidateFor(result, claimant).documents()).containsExactly(withNoticePdf);
-        assertThat(candidateFor(result, defendant).role()).isEqualTo(PartyRole.DEFENDANT);
-        assertThat(candidateFor(result, defendant).documents()).containsExactly(withNoticePdf);
+        assertThat(candidateFor(result, coDefendant).role()).isEqualTo(PartyRole.DEFENDANT);
         assertThat(candidateFor(result, coDefendant).documents()).containsExactly(withNoticePdf);
     }
 
@@ -111,19 +113,47 @@ class GenAppPackSelectorTest {
             List.of(defendantSelfServeWithNoticeGa(withNoticePdf, defendant)), claimant, defendant, coDefendant));
 
         assertThat(result).extracting(candidate -> candidate.recipient().getId())
-            .containsExactly(claimant.getId(), defendant.getId());
+            .containsExactly(claimant.getId());
     }
 
     @Test
-    @DisplayName("Includes the defendant applicant among the postal parties")
-    void shouldIncludeTheApplicant() {
+    @DisplayName("Excludes the applicant (the defendant whose LR made the application) from the postal parties")
+    void shouldExcludeTheApplicant() {
         when(claimActivityLogRepository.findAllByPcsCase_Id(CASE_ID)).thenReturn(List.of());
 
         List<GenAppPackCandidate> result = underTest.findGenAppPackCandidates(caseWith(
-            List.of(defendantSelfServeWithNoticeGa(withNoticePdf, defendant)), claimant, defendant));
+            List.of(defendantSelfServeWithNoticeGa(withNoticePdf, defendant)), claimant, defendant, coDefendant));
 
         assertThat(result).extracting(candidate -> candidate.recipient().getId())
-            .containsExactly(claimant.getId(), defendant.getId());
+            .containsExactly(claimant.getId(), coDefendant.getId());
+    }
+
+    @Test
+    @DisplayName("Excludes a co-defendant represented by a legal rep")
+    void shouldExcludeRepresentedDefendant() {
+        coDefendant.setClaimPartyOrganisationList(List.of(
+            ClaimPartyOrganisationEntity.builder().active(YesOrNo.YES).build()));
+        when(claimActivityLogRepository.findAllByPcsCase_Id(CASE_ID)).thenReturn(List.of());
+
+        List<GenAppPackCandidate> result = underTest.findGenAppPackCandidates(caseWith(
+            List.of(defendantSelfServeWithNoticeGa(withNoticePdf, defendant)), claimant, defendant, coDefendant));
+
+        assertThat(result).extracting(candidate -> candidate.recipient().getId())
+            .containsExactly(claimant.getId());
+    }
+
+    @Test
+    @DisplayName("Includes a co-defendant whose legal rep link is no longer active")
+    void shouldIncludeDefendantWithInactiveRepresentation() {
+        coDefendant.setClaimPartyOrganisationList(List.of(
+            ClaimPartyOrganisationEntity.builder().active(YesOrNo.NO).build()));
+        when(claimActivityLogRepository.findAllByPcsCase_Id(CASE_ID)).thenReturn(List.of());
+
+        List<GenAppPackCandidate> result = underTest.findGenAppPackCandidates(caseWith(
+            List.of(defendantSelfServeWithNoticeGa(withNoticePdf, defendant)), claimant, defendant, coDefendant));
+
+        assertThat(result).extracting(candidate -> candidate.recipient().getId())
+            .containsExactly(claimant.getId(), coDefendant.getId());
     }
 
     @Test
@@ -143,14 +173,14 @@ class GenAppPackSelectorTest {
     @DisplayName("Defaults to post when contact preferences are unset")
     void shouldDefaultToPostWhenPreferencesUnset() {
         claimant.setContactPreferences(null);
-        defendant.setContactPreferences(ContactPreferencesEntity.builder().build());
+        coDefendant.setContactPreferences(ContactPreferencesEntity.builder().build());
         when(claimActivityLogRepository.findAllByPcsCase_Id(CASE_ID)).thenReturn(List.of());
 
         List<GenAppPackCandidate> result = underTest.findGenAppPackCandidates(caseWith(
-            List.of(defendantSelfServeWithNoticeGa(withNoticePdf, defendant)), claimant, defendant));
+            List.of(defendantSelfServeWithNoticeGa(withNoticePdf, defendant)), claimant, defendant, coDefendant));
 
         assertThat(result).extracting(candidate -> candidate.recipient().getId())
-            .containsExactly(claimant.getId(), defendant.getId());
+            .containsExactly(claimant.getId(), coDefendant.getId());
     }
 
     @Test
@@ -184,10 +214,10 @@ class GenAppPackSelectorTest {
             sent(claimant, withNoticePdf)));
 
         List<GenAppPackCandidate> result = underTest.findGenAppPackCandidates(caseWith(
-            List.of(defendantSelfServeWithNoticeGa(withNoticePdf, defendant)), claimant, defendant));
+            List.of(defendantSelfServeWithNoticeGa(withNoticePdf, defendant)), claimant, defendant, coDefendant));
 
         assertThat(result).extracting(candidate -> candidate.recipient().getId())
-            .containsExactly(defendant.getId());
+            .containsExactly(coDefendant.getId());
     }
 
     @Test
@@ -220,10 +250,10 @@ class GenAppPackSelectorTest {
         GenAppEntity lrGa = defendantLrWithNoticeGa(withNoticePdf, defendant);
 
         List<GenAppPackCandidate> result = underTest.findGenAppPackCandidates(caseWith(
-            List.of(lrGa), claimant, defendant));
+            List.of(lrGa), claimant, defendant, coDefendant));
 
         assertThat(result).extracting(candidate -> candidate.recipient().getId())
-            .containsExactly(claimant.getId(), defendant.getId());
+            .containsExactly(claimant.getId(), coDefendant.getId());
     }
 
     @ParameterizedTest
@@ -261,12 +291,12 @@ class GenAppPackSelectorTest {
         second.setRank(2);
 
         List<GenAppPackCandidate> result = underTest.findGenAppPackCandidates(caseWith(
-            List.of(first, second), claimant, defendant));
+            List.of(first, second), claimant, defendant, coDefendant));
 
         assertThat(result).hasSize(4);
         assertThat(candidatesFor(result, claimant)).extracting(GenAppPackCandidate::documents)
             .containsExactly(List.of(withNoticePdf), List.of(secondGaPdf));
-        assertThat(candidatesFor(result, defendant)).extracting(GenAppPackCandidate::documents)
+        assertThat(candidatesFor(result, coDefendant)).extracting(GenAppPackCandidate::documents)
             .containsExactly(List.of(withNoticePdf), List.of(secondGaPdf));
     }
 
@@ -376,7 +406,7 @@ class GenAppPackSelectorTest {
         englishGa.setLanguageUsed(LanguageUsed.ENGLISH);
 
         List<GenAppPackCandidate> result = underTest.findGenAppPackCandidates(caseWith(
-            List.of(welshGa, englishGa), claimant, defendant));
+            List.of(welshGa, englishGa), claimant, defendant, coDefendant));
 
         assertThat(result).hasSize(2);
         assertThat(result).extracting(GenAppPackCandidate::documents)
@@ -403,7 +433,8 @@ class GenAppPackSelectorTest {
         when(claimActivityLogRepository.findAllByPcsCase_Id(CASE_ID)).thenReturn(List.of());
         ClaimEntity claim = ClaimEntity.builder()
             .claimParties(List.of(
-                ClaimPartyEntity.builder().party(defendant).role(PartyRole.DEFENDANT).rank(1).build()))
+                ClaimPartyEntity.builder().party(defendant).role(PartyRole.DEFENDANT).rank(1).build(),
+                ClaimPartyEntity.builder().party(coDefendant).role(PartyRole.DEFENDANT).rank(2).build()))
             .build();
         PcsCaseEntity pcsCase = PcsCaseEntity.builder()
             .id(CASE_ID)
@@ -415,7 +446,7 @@ class GenAppPackSelectorTest {
         List<GenAppPackCandidate> result = underTest.findGenAppPackCandidates(pcsCase);
 
         assertThat(result).singleElement().satisfies(candidate -> {
-            assertThat(candidate.recipient().getId()).isEqualTo(defendant.getId());
+            assertThat(candidate.recipient().getId()).isEqualTo(coDefendant.getId());
             assertThat(candidate.role()).isEqualTo(PartyRole.DEFENDANT);
             assertThat(candidate.documents()).containsExactly(withNoticePdf);
         });

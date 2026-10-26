@@ -1,6 +1,7 @@
 package uk.gov.hmcts.reform.pcs.ccd.service.bulkprint;
 
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.ccd.sdk.type.YesOrNo;
 import uk.gov.hmcts.reform.pcs.ccd.domain.VerticalYesNo;
 import uk.gov.hmcts.reform.pcs.ccd.domain.genapp.GenAppState;
 import uk.gov.hmcts.reform.pcs.ccd.entity.ClaimEntity;
@@ -26,7 +27,8 @@ import static uk.gov.hmcts.reform.pcs.ccd.service.form.PartyDisplayMapper.partie
 /**
  * Selects gen-app envelopes per recipient. Issued with-notice defendant self-serve GAs (made through
  * pcs-frontend by the defendant or their legal rep) with a submission PDF go to every claim party whose
- * contact preferences include post (or are unset). Without-notice GAs, non-defendant-applicant GAs and
+ * contact preferences include post (or are unset), except the applicant and any LR-represented defendant,
+ * who are served digitally through their legal rep. Without-notice GAs, non-defendant-applicant GAs and
  * caseworker-entered GAs (those with an application received date) produce no candidates.
  */
 @Service
@@ -73,8 +75,10 @@ public class GenAppPackSelector {
                 continue;
             }
             DocumentEntity document = genApp.getSubmissionDocument();
+            PartyEntity applicant = genApp.getParty();
             for (PartyEntity party : allParties) {
-                if (!wantsPost(party) || sent.contains(key(party, document))) {
+                if (isExcludedRecipient(party, applicant, roleByPartyId)
+                    || !wantsPost(party) || sent.contains(key(party, document))) {
                     continue;
                 }
                 candidates.add(new GenAppPackCandidate(
@@ -116,6 +120,24 @@ public class GenAppPackSelector {
         return genApp.getState() == GenAppState.GEN_APP_ISSUED
             && genApp.getSubmissionDocument() != null
             && genApp.getWithoutNotice() != VerticalYesNo.YES;
+    }
+
+    /**
+     * The applicant (the defendant whose LR made the application, or the self-serve defendant) and any
+     * LR-represented defendant are served digitally through their legal rep, never by post, so they are
+     * never pack recipients. Every other postal party on the claim is notified.
+     */
+    private boolean isExcludedRecipient(PartyEntity party, PartyEntity applicant,
+                                        Map<UUID, PartyRole> roleByPartyId) {
+        if (applicant != null && party.getId().equals(applicant.getId())) {
+            return true;
+        }
+        return roleByPartyId.get(party.getId()) == PartyRole.DEFENDANT && isRepresented(party);
+    }
+
+    private boolean isRepresented(PartyEntity party) {
+        return party.getClaimPartyOrganisationList().stream()
+            .anyMatch(link -> YesOrNo.YES.equals(link.getActive()));
     }
 
     private boolean wantsPost(PartyEntity party) {

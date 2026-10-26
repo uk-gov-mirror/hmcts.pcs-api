@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.ccd.sdk.type.AddressUK;
+import uk.gov.hmcts.reform.pcs.ccd.service.coverletter.GenAppCoverLetterProvider;
 import uk.gov.hmcts.reform.pcs.ccd.service.coversheet.CoversheetProvider;
 import uk.gov.hmcts.reform.authorisation.generators.AuthTokenGenerator;
 import uk.gov.hmcts.reform.pcs.ccd.entity.DocumentEntity;
@@ -41,6 +42,8 @@ class BulkPrintServiceTest {
 
     @Mock
     private CoversheetProvider coversheetProvider;
+    @Mock
+    private GenAppCoverLetterProvider genAppCoverLetterProvider;
     @Mock
     private LetterDocumentFetcher letterDocumentFetcher;
     @Mock
@@ -79,7 +82,7 @@ class BulkPrintServiceTest {
             .addressLine1("1 High Street").postTown("London").postCode("W1 1AA").build();
 
         UUID letterId = underTest.sendPack(
-            pcsCase, recipient, LetterType.CLAIMANT_CLAIM_PACK, "Jane Doe", address, List.of(claimForm));
+            pcsCase, recipient, LetterType.CLAIMANT_CLAIM_PACK, "Jane Doe", address, null, List.of(claimForm));
 
         assertThat(letterId).isEqualTo(LETTER_ID);
         verify(coversheetProvider).render("Jane Doe", address, "1234-5678-9012-3456");
@@ -116,7 +119,7 @@ class BulkPrintServiceTest {
         AddressUK address = AddressUK.builder()
             .addressLine1("1 High Street").postTown("London").postCode("W1 1AA").build();
 
-        underTest.sendPack(pcsCase, recipient, letterType, "Jane Doe", address, List.of(document));
+        underTest.sendPack(pcsCase, recipient, letterType, "Jane Doe", address, null, List.of(document));
 
         verify(sendLetterApi).sendLetter(eq("s2s"), letterCaptor.capture());
         assertThat(letterCaptor.getValue().type).isEqualTo(expectedLetterType);
@@ -128,9 +131,39 @@ class BulkPrintServiceTest {
         AddressUK blank = AddressUK.builder().build();
 
         assertThatThrownBy(() -> underTest.sendPack(
-            pcsCase, recipient, LetterType.DEFENDANT_CLAIM_PACK, "Jane Doe", blank, List.of()))
+            pcsCase, recipient, LetterType.DEFENDANT_CLAIM_PACK, "Jane Doe", blank, null, List.of()))
             .isInstanceOf(MissingPostalAddressException.class);
 
-        verifyNoInteractions(coversheetProvider, letterDocumentFetcher, pdfMerger, sendLetterApi);
+        verifyNoInteractions(coversheetProvider, genAppCoverLetterProvider, letterDocumentFetcher, pdfMerger,
+            sendLetterApi);
+    }
+
+    @Test
+    @DisplayName("Inserts the cover letter between the coversheet and the form for a gen-app pack")
+    void shouldInsertCoverLetterForGenAppPack() {
+        byte[] coversheetBytes = "coversheet".getBytes();
+        byte[] coverLetterBytes = "cover-letter".getBytes();
+        byte[] gaFormBytes = "ga-form".getBytes();
+        byte[] mergedBytes = "merged-pdf".getBytes();
+        when(authTokenGenerator.generate()).thenReturn("s2s");
+        when(caseReferenceFormatter.formatCaseReferenceWithDashes(any())).thenReturn("1234-5678-9012-3456");
+        when(coversheetProvider.render(any(), any(), any())).thenReturn(coversheetBytes);
+        when(genAppCoverLetterProvider.render(any(), any(), any(), any(), any(), any())).thenReturn(coverLetterBytes);
+        when(letterDocumentFetcher.fetchBytes(any())).thenReturn(gaFormBytes);
+        when(pdfMerger.merge(List.of(coversheetBytes, coverLetterBytes, gaFormBytes))).thenReturn(mergedBytes);
+        when(sendLetterApi.sendLetter(any(), any(LetterV3.class))).thenReturn(new SendLetterResponse(LETTER_ID));
+
+        DocumentEntity gaForm = DocumentEntity.builder().id(UUID.randomUUID()).documentId(UUID.randomUUID()).build();
+        AddressUK address = AddressUK.builder()
+            .addressLine1("1 High Street").postTown("London").postCode("W1 1AA").build();
+
+        underTest.sendPack(
+            pcsCase, recipient, LetterType.GEN_APP_PACK, "Jane Doe", address, "Smith v Jones", List.of(gaForm));
+
+        verify(genAppCoverLetterProvider).render(
+            pcsCase, recipient, "Jane Doe", address, "Smith v Jones", "1234-5678-9012-3456");
+        verify(pdfMerger).merge(List.of(coversheetBytes, coverLetterBytes, gaFormBytes));
+        verify(sendLetterApi).sendLetter(eq("s2s"), letterCaptor.capture());
+        assertThat(letterCaptor.getValue().type).isEqualTo("GEN-00-IN0");
     }
 }

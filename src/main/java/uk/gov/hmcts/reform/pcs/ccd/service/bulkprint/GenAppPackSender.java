@@ -27,6 +27,6 @@ public class GenAppPackSender {
         packSendRecorder.sendAndRecord(resolved.pcsCase(), resolved.recipient(), resolved.letterType(),
             resolved.documents(),
             () -> bulkPrintService.sendPack(resolved.pcsCase(), resolved.recipient(), resolved.letterType(),
-                resolved.recipientName(), resolved.address(), resolved.documents()));
+                resolved.recipientName(), resolved.address(), resolved.caseName(), resolved.documents()));
     }
 }
